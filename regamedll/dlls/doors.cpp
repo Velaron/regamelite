@@ -1,5 +1,12 @@
 #include "precompiled.h"
 
+#if !defined(DOOR_ASSERT)
+#undef DbgAssert
+#undef DbgAssertMsg
+#define DbgAssert(_exp) ((void)0)
+#define DbgAssertMsg(_exp, _msg) ((void)0)
+#endif
+
 TYPEDESCRIPTION CBaseDoor::m_SaveData[] =
 {
 	DEFINE_FIELD(CBaseDoor, m_bHealthValue, FIELD_CHARACTER),
@@ -215,7 +222,7 @@ void CBaseDoor::Spawn()
 	// Subtract 2 from size because the engine expands bboxes by 1 in all directions making the size too big
 	m_vecPosition2 = m_vecPosition1 + (pev->movedir * (Q_fabs(real_t(pev->movedir.x * (pev->size.x - 2))) + Q_fabs(real_t(pev->movedir.y * (pev->size.y - 2))) + Q_fabs(real_t(pev->movedir.z * (pev->size.z - 2))) - m_flLip));
 
-	assert(("door start/end positions are equal", m_vecPosition1 != m_vecPosition2));
+	DbgAssertMsg(m_vecPosition1 != m_vecPosition2, "door start/end positions are equal");
 
 	if (pev->spawnflags & SF_DOOR_START_OPEN)
 	{
@@ -494,7 +501,7 @@ void CBaseDoor::DoorGoUp()
 	bool isReversing = (m_toggle_state == TS_GOING_DOWN);
 
 	// It could be going-down, if blocked.
-	assert(m_toggle_state == TS_AT_BOTTOM || m_toggle_state == TS_GOING_DOWN);
+	DbgAssert(m_toggle_state == TS_AT_BOTTOM || m_toggle_state == TS_GOING_DOWN);
 
 	// emit door moving and stop sounds on CHAN_STATIC so that the multicast doesn't
 	// filter them out and leave a client stuck with looping door sounds!
@@ -634,7 +641,7 @@ void CBaseDoor::DoorHitTop()
 		EMIT_SOUND(ENT(pev), CHAN_STATIC, (char *)STRING(pev->noiseArrived), VOL_NORM, ATTN_NORM);
 	}
 
-	assert(m_toggle_state == TS_GOING_UP);
+	DbgAssert(m_toggle_state == TS_GOING_UP);
 	m_toggle_state = TS_AT_TOP;
 
 	// toggle-doors don't come down automatically, they wait for refire.
@@ -695,10 +702,7 @@ void CBaseDoor::DoorGoDown()
 		}
 	}
 
-#ifdef DOOR_ASSERT
-	assert(m_toggle_state == TS_AT_TOP);
-#endif
-
+	DbgAssert(m_toggle_state == TS_AT_TOP);
 	m_toggle_state = TS_GOING_DOWN;
 
 	SetMoveDone(&CBaseDoor::DoorHitBottom);
@@ -724,7 +728,7 @@ void CBaseDoor::DoorHitBottom()
 		EMIT_SOUND(ENT(pev), CHAN_STATIC, (char *)STRING(pev->noiseArrived), VOL_NORM, ATTN_NORM);
 	}
 
-	assert(m_toggle_state == TS_GOING_DOWN);
+	DbgAssert(m_toggle_state == TS_GOING_DOWN);
 	m_toggle_state = TS_AT_BOTTOM;
 
 	// Re-instate touch method, cycle is complete
@@ -927,7 +931,7 @@ void CRotDoor::Spawn()
 	m_vecAngle1 = pev->angles;
 	m_vecAngle2 = pev->angles + pev->movedir * m_flMoveDistance;
 
-	assert(("rotating door start/end positions are equal", m_vecAngle1 != m_vecAngle2));
+	DbgAssertMsg(m_vecAngle1 != m_vecAngle2, "rotating door start/end positions are equal");
 
 	if (pev->spawnflags & SF_DOOR_PASSABLE)
 		pev->solid = SOLID_NOT;
@@ -1011,7 +1015,7 @@ void CMomentaryDoor::Spawn()
 
 	// Subtract 2 from size because the engine expands bboxes by 1 in all directions making the size too big
 	m_vecPosition2 = m_vecPosition1 + (pev->movedir * (Q_fabs(real_t(pev->movedir.x * (pev->size.x - 2))) + Q_fabs(real_t(pev->movedir.y * (pev->size.y - 2))) + Q_fabs(real_t(pev->movedir.z * (pev->size.z - 2))) - m_flLip));
-	assert(("door start/end positions are equal", m_vecPosition1 != m_vecPosition2));
+	DbgAssertMsg(m_vecPosition1 != m_vecPosition2, "door start/end positions are equal");
 
 	if (pev->spawnflags & SF_DOOR_START_OPEN)
 	{

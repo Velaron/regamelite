@@ -43,10 +43,7 @@ int GetBotFollowCount(CBasePlayer *pLeader)
 	{
 		CBasePlayer *pPlayer = UTIL_PlayerByIndex(i);
 
-		if (!pPlayer)
-			continue;
-
-		if (FNullEnt(pPlayer->pev))
+		if (!UTIL_IsValidPlayer(pPlayer))
 			continue;
 
 		if (FStrEq(STRING(pPlayer->pev->netname), ""))
@@ -429,6 +426,20 @@ bool CCSBot::StayOnNavMesh()
 	return false;
 }
 
+#ifdef REGAMEDLL_FIXES
+void CCSBot::Kill()
+{
+	m_LastHitGroup = HITGROUP_GENERIC;
+
+	// have the player kill himself
+	pev->health = 0.0f;
+	Killed(VARS(eoNullEntity), GIB_NEVER);
+
+	if (CSGameRules()->m_pVIP == this)
+		CSGameRules()->m_iConsecutiveVIP = 10;
+}
+#endif
+
 void CCSBot::Panic(CBasePlayer *pEnemy)
 {
 	if (IsSurprised())
@@ -671,10 +682,7 @@ CBasePlayer *CCSBot::GetImportantEnemy(bool checkVisibility) const
 	{
 		CBasePlayer *pPlayer = UTIL_PlayerByIndex(i);
 
-		if (!pPlayer)
-			continue;
-
-		if (FNullEnt(pPlayer->pev))
+		if (!UTIL_IsValidPlayer(pPlayer))
 			continue;
 
 		if (FStrEq(STRING(pPlayer->pev->netname), ""))

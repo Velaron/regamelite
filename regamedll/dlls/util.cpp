@@ -506,7 +506,11 @@ void UTIL_ScreenShake(const Vector &center, float amplitude, float frequency, fl
 	for (i = 1; i <= gpGlobals->maxClients; i++)
 	{
 		CBaseEntity *pPlayer = UTIL_PlayerByIndex(i);
-		if (!pPlayer || !(pPlayer->pev->flags & FL_ONGROUND))
+
+		if (!UTIL_IsValidPlayer(pPlayer))
+			continue;
+
+		if (!(pPlayer->pev->flags & FL_ONGROUND))
 			continue;
 
 		localAmplitude = 0;
@@ -552,7 +556,10 @@ void UTIL_ScreenFadeBuild(ScreenFade &fade, const Vector &color, float fadeTime,
 
 void UTIL_ScreenFadeWrite(const ScreenFade &fade, CBaseEntity *pEntity)
 {
-	if (!pEntity || !pEntity->IsNetClient())
+	if (!UTIL_IsValidPlayer(pEntity))
+		return;
+
+	if (!pEntity->IsNetClient())
 		return;
 
 	MESSAGE_BEGIN(MSG_ONE, gmsgFade, nullptr, pEntity->edict());
@@ -634,10 +641,11 @@ void UTIL_HudMessageAll(const hudtextparms_t &textparms, const char *pMessage)
 	for (int i = 1; i <= gpGlobals->maxClients; i++)
 	{
 		CBaseEntity *pPlayer = UTIL_PlayerByIndex(i);
-		if (pPlayer)
-		{
-			UTIL_HudMessage(pPlayer, textparms, pMessage);
-		}
+
+		if (!UTIL_IsValidPlayer(pPlayer))
+			continue;
+
+		UTIL_HudMessage(pPlayer, textparms, pMessage);
 	}
 }
 
@@ -682,10 +690,7 @@ void UTIL_Log(const char *fmt, ...)
 	Q_vsnprintf(string, sizeof(string), fmt, ap);
 	va_end(ap);
 
-	if (Q_strlen(string) < sizeof(string) - 2)
-		Q_strcat(string, "\n");
-	else
-		string[Q_strlen(string) - 1] = '\n';
+	Q_strlcat(string, "\n");
 
 	FILE *fp = fopen("regamedll.log", "at");
 	if (fp)
@@ -709,10 +714,7 @@ void UTIL_ServerPrint(const char *fmt, ...)
 	Q_vsnprintf(string, sizeof(string), fmt, ap);
 	va_end(ap);
 
-	if (Q_strlen(string) < sizeof(string) - 2)
-		Q_strcat(string, "\n");
-	else
-		string[Q_strlen(string) - 1] = '\n';
+	Q_strlcat(string, "\n");
 
 	SERVER_PRINT(string);
 }
@@ -730,10 +732,7 @@ void UTIL_PrintConsole(edict_t *pEdict, const char *fmt, ...)
 	Q_vsnprintf(string, sizeof(string), fmt, ap);
 	va_end(ap);
 
-	if (Q_strlen(string) < sizeof(string) - 2)
-		Q_strcat(string, "\n");
-	else
-		string[Q_strlen(string) - 1] = '\n';
+	Q_strlcat(string, "\n");
 
 	ClientPrint(pEntity->pev, HUD_PRINTCONSOLE, string);
 }
@@ -751,10 +750,7 @@ void UTIL_SayText(edict_t *pEdict, const char *fmt, ...)
 	Q_vsnprintf(string, sizeof(string), fmt, ap);
 	va_end(ap);
 
-	if (Q_strlen(string) < sizeof(string) - 2)
-		Q_strcat(string, "\n");
-	else
-		string[Q_strlen(string) - 1] = '\n';
+	Q_strlcat(string, "\n");
 
 	MESSAGE_BEGIN(MSG_ONE, gmsgSayText, nullptr, pEntity->edict());
 		WRITE_BYTE(pEntity->entindex());
@@ -773,28 +769,28 @@ void UTIL_SayTextAll(const char *pText, CBaseEntity *pEntity)
 char *UTIL_dtos1(int d)
 {
 	static char buf[12];
-	Q_sprintf(buf, "%d", d);
+	Q_snprintf(buf, sizeof(buf), "%d", d);
 	return buf;
 }
 
 char *UTIL_dtos2(int d)
 {
 	static char buf[12];
-	Q_sprintf(buf, "%d", d);
+	Q_snprintf(buf, sizeof(buf), "%d", d);
 	return buf;
 }
 
 NOXREF char *UTIL_dtos3(int d)
 {
 	static char buf[12];
-	Q_sprintf(buf, "%d", d);
+	Q_snprintf(buf, sizeof(buf), "%d", d);
 	return buf;
 }
 
 NOXREF char *UTIL_dtos4(int d)
 {
 	static char buf[12];
-	Q_sprintf(buf, "%d", d);
+	Q_snprintf(buf, sizeof(buf), "%d", d);
 	return buf;
 }
 
@@ -843,8 +839,11 @@ void UTIL_ShowMessageAll(const char *pString, bool isHint)
 	for (int i = 1; i <= gpGlobals->maxClients; i++)
 	{
 		CBaseEntity *pPlayer = UTIL_PlayerByIndex(i);
-		if (pPlayer)
-			UTIL_ShowMessage(pString, pPlayer, isHint);
+
+		if (!UTIL_IsValidPlayer(pPlayer))
+			continue;
+
+		UTIL_ShowMessage(pString, pPlayer, isHint);
 	}
 }
 
@@ -980,7 +979,7 @@ char *UTIL_VarArgs(char *format, ...)
 	static char string[1024];
 
 	va_start(argptr, format);
-	vsprintf(string, format, argptr);
+	Q_vsnprintf(string, sizeof(string), format, argptr);
 	va_end(argptr);
 
 	return string;
@@ -1497,7 +1496,7 @@ void UTIL_RestartOther(const char *szClassname)
 	while ((pEntity = UTIL_FindEntityByClassname(pEntity, szClassname)))
 	{
 		pEntity->Restart();
-		
+
 #ifdef REGAMEDLL_ADD
 		FireTargets("game_entity_restart", pEntity, nullptr, USE_TOGGLE, 0.0);
 #endif
@@ -1550,7 +1549,7 @@ void UTIL_LogPrintf(const char *fmt, ...)
 	static char string[1024];
 
 	va_start(argptr, fmt);
-	vsprintf(string, fmt, argptr);
+	Q_vsnprintf(string, sizeof(string), fmt, argptr);
 	va_end(argptr);
 
 	ALERT(at_logged, "%s", string);
@@ -1569,7 +1568,7 @@ char UTIL_TextureHit(TraceResult *ptr, Vector vecSrc, Vector vecEnd)
 	float rgfl1[3];
 	float rgfl2[3];
 	const char *pTextureName;
-	char szbuffer[64];
+	char szbuffer[MAX_TEXTURENAME_LENGHT];
 	CBaseEntity *pEntity = CBaseEntity::Instance(ptr->pHit);
 
 #ifdef REGAMEDLL_FIXES
@@ -1595,8 +1594,8 @@ char UTIL_TextureHit(TraceResult *ptr, Vector vecSrc, Vector vecEnd)
 		if (*pTextureName == '{' || *pTextureName == '!' || *pTextureName == '~' || *pTextureName == ' ')
 			pTextureName++;
 
-		Q_strcpy(szbuffer, pTextureName);
-		szbuffer[16] = '\0';
+		Q_strlcpy(szbuffer, pTextureName);
+
 		chTextureType = TEXTURETYPE_Find(szbuffer);
 	}
 	else
@@ -1661,14 +1660,12 @@ int UTIL_ReadFlags(const char *c)
 // Determine whether bots can be used or not
 bool UTIL_AreBotsAllowed()
 {
-#ifdef REGAMEDLL_ADD
-	if (g_engfuncs.pfnEngCheckParm == nullptr)
-		return false;
-#endif
-
 	if (AreRunningCZero())
 	{
 #ifdef REGAMEDLL_ADD
+		if (g_engfuncs.pfnEngCheckParm == nullptr)
+			return false;
+
 		// If they pass in -nobots, don't allow bots.  This is for people who host servers, to
 		// allow them to disallow bots to enforce CPU limits.
 		int nobots = ENG_CHECK_PARM("-nobots", nullptr);
@@ -1688,15 +1685,10 @@ bool UTIL_AreBotsAllowed()
 		return true;
 	}
 
-	// allow the using of bots for CS 1.6
-	int bots = ENG_CHECK_PARM("-bots", nullptr);
-	if (bots)
-	{
-		return true;
-	}
-#endif
-
+	return cv_bot_enable.value > 0;
+#else
 	return false;
+#endif
 }
 
 bool UTIL_IsBeta()
@@ -1729,18 +1721,10 @@ bool UTIL_AreHostagesImprov()
 	}
 
 #ifdef REGAMEDLL_ADD
-	if (g_engfuncs.pfnEngCheckParm == nullptr)
-		return false;
-	
-	// someday in CS 1.6
-	int improv = ENG_CHECK_PARM("-host-improv", nullptr);
-	if (improv)
-	{
-		return true;
-	}
-#endif
-
+	return cv_hostage_ai_enable.value > 0;
+#else
 	return false;
+#endif
 }
 
 int UTIL_GetNumPlayers()
@@ -1749,13 +1733,25 @@ int UTIL_GetNumPlayers()
 	for (int i = 1; i <= gpGlobals->maxClients; i++)
 	{
 		CBasePlayer *pPlayer = UTIL_PlayerByIndex(i);
-		if (pPlayer)
-		{
-			nNumPlayers++;
-		}
+
+		if (!UTIL_IsValidPlayer(pPlayer))
+			continue;
+
+		nNumPlayers++;
 	}
 
 	return nNumPlayers;
+}
+
+int UTIL_CountEntities(const char *szName)
+{
+	int count = 0;
+	CBaseEntity *pEnt = nullptr;
+
+	while ((pEnt = UTIL_FindEntityByClassname(pEnt, szName)))
+		count++;
+
+	return count;
 }
 
 bool UTIL_IsSpawnPointOccupied(CBaseEntity *pSpot)
@@ -1808,10 +1804,11 @@ void NORETURN Sys_Error(const char *error, ...)
 
 	CONSOLE_ECHO("FATAL ERROR (shutting down): %s\n", text);
 
-	//TerminateProcess(GetCurrentProcess(), 1);
-	int *null = 0;
-	*null = 0;
-	exit(-1);
+#if defined(_WIN32)
+	MessageBoxA(NULL, text, "Fatal error", MB_ICONERROR | MB_OK);
+#endif
+
+	exit(EXIT_FAILURE);
 }
 
 int UTIL_CountPlayersInBrushVolume(bool bOnlyAlive, CBaseEntity *pBrushEntity, int &playersInCount, int &playersOutCount, CPlayerInVolumeAdapter *pAdapter)
@@ -1825,7 +1822,10 @@ int UTIL_CountPlayersInBrushVolume(bool bOnlyAlive, CBaseEntity *pBrushEntity, i
 		{
 			CBasePlayer *pPlayer = UTIL_PlayerByIndex(i);
 
-			if (!pPlayer || !pPlayer->IsInWorld())
+			if (!UTIL_IsValidPlayer(pPlayer))
+				continue;
+
+			if (!pPlayer->IsInWorld())
 				continue;
 
 			if (bOnlyAlive && !pPlayer->IsAlive())

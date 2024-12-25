@@ -737,6 +737,18 @@ typedef IHookChainRegistryClassImpl<void, CBasePlayerWeapon, float, float, float
 typedef IHookChainClassImpl<void, CBasePlayerWeapon, int, int> CReGameHook_CBasePlayerWeapon_SendWeaponAnim;
 typedef IHookChainRegistryClassImpl<void, CBasePlayerWeapon, int, int> CReGameHookRegistry_CBasePlayerWeapon_SendWeaponAnim;
 
+// CBasePlayer::PlayerDeathThink hook
+typedef IHookChainClassImpl<void, CBasePlayer> CReGameHook_CBasePlayer_PlayerDeathThink;
+typedef IHookChainRegistryClassImpl<void, CBasePlayer> CReGameHookRegistry_CBasePlayer_PlayerDeathThink;
+
+// CBasePlayer::Observer_Think hook
+typedef IHookChainClassImpl<void, CBasePlayer> CReGameHook_CBasePlayer_Observer_Think;
+typedef IHookChainRegistryClassImpl<void, CBasePlayer> CReGameHookRegistry_CBasePlayer_Observer_Think;
+
+// CBasePlayer::RemoveAllItems hook
+typedef IHookChainClassImpl<void, CBasePlayer, BOOL> CReGameHook_CBasePlayer_RemoveAllItems;
+typedef IHookChainRegistryClassImpl<void, CBasePlayer, BOOL> CReGameHookRegistry_CBasePlayer_RemoveAllItems;
+
 class CReGameHookchains: public IReGameHookchains {
 public:
 	// CBasePlayer virtual
@@ -895,6 +907,10 @@ public:
 	CReGameHookRegistry_CBasePlayerWeapon_SendWeaponAnim m_CBasePlayerWeapon_SendWeaponAnim;
 	CReGameHookRegistry_CSGameRules_SendDeathMessage m_CSGameRules_SendDeathMessage;
 
+	CReGameHookRegistry_CBasePlayer_PlayerDeathThink m_CBasePlayer_PlayerDeathThink;
+	CReGameHookRegistry_CBasePlayer_Observer_Think m_CBasePlayer_Observer_Think;
+	CReGameHookRegistry_CBasePlayer_RemoveAllItems m_CBasePlayer_RemoveAllItems;
+
 public:
 	virtual IReGameHookRegistry_CBasePlayer_Spawn *CBasePlayer_Spawn();
 	virtual IReGameHookRegistry_CBasePlayer_Precache *CBasePlayer_Precache();
@@ -1050,6 +1066,10 @@ public:
 	virtual IReGameHookRegistry_CBasePlayerWeapon_KickBack *CBasePlayerWeapon_KickBack();
 	virtual IReGameHookRegistry_CBasePlayerWeapon_SendWeaponAnim *CBasePlayerWeapon_SendWeaponAnim();
 	virtual IReGameHookRegistry_CSGameRules_SendDeathMessage *CSGameRules_SendDeathMessage();
+
+	virtual IReGameHookRegistry_CBasePlayer_PlayerDeathThink *CBasePlayer_PlayerDeathThink();
+	virtual IReGameHookRegistry_CBasePlayer_Observer_Think *CBasePlayer_Observer_Think();
+	virtual IReGameHookRegistry_CBasePlayer_RemoveAllItems *CBasePlayer_RemoveAllItems();
 };
 
 extern CReGameHookchains g_ReGameHookchains;

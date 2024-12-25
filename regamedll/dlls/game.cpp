@@ -9,6 +9,7 @@ cvar_t *g_psv_friction    = nullptr;
 cvar_t *g_psv_stopspeed   = nullptr;
 cvar_t *g_psv_stepsize    = nullptr;
 cvar_t *g_psv_clienttrace = nullptr;
+cvar_t *g_psv_maxvelocity = nullptr;
 
 cvar_t displaysoundlist      = { "displaysoundlist", "0", 0, 0.0f, nullptr };
 cvar_t timelimit             = { "mp_timelimit", "0", FCVAR_SERVER, 0.0f, nullptr };
@@ -166,14 +167,26 @@ cvar_t sv_autobunnyhopping               = { "sv_autobunnyhopping", "0", 0, 0.0f
 cvar_t sv_enablebunnyhopping             = { "sv_enablebunnyhopping", "0", 0, 0.0f, nullptr };
 cvar_t plant_c4_anywhere                 = { "mp_plant_c4_anywhere", "0", 0, 0.0f, nullptr };
 cvar_t give_c4_frags                     = { "mp_give_c4_frags", "3", 0, 3.0f, nullptr };
-cvar_t deathmsg_flags                    = { "mp_deathmsg_flags", "7", 0, 7.0f, nullptr };
+cvar_t deathmsg_flags                    = { "mp_deathmsg_flags", "abc", 0, 0.0f, nullptr };
 cvar_t assist_damage_threshold           = { "mp_assist_damage_threshold", "40", 0, 40.0f, nullptr };
+cvar_t freezetime_duck                   = { "mp_freezetime_duck", "1", 0, 1.0f, nullptr };
+cvar_t freezetime_jump                   = { "mp_freezetime_jump", "1", 0, 1.0f, nullptr };
 
 cvar_t hostages_rescued_ratio = { "mp_hostages_rescued_ratio", "1.0", 0, 1.0f, nullptr };
 
 cvar_t legacy_vehicle_block               = { "mp_legacy_vehicle_block", "1", 0, 0.0f, nullptr };
 
 cvar_t dying_time              = { "mp_dying_time", "3.0", 0, 3.0f, nullptr };
+cvar_t defuser_allocation      = { "mp_defuser_allocation", "0", 0, 0.0f, nullptr };
+cvar_t location_area_info      = { "mp_location_area_info", "0", 0, 0.0f, nullptr };
+cvar_t chat_loc_fallback       = { "mp_chat_loc_fallback", "1", 0, 1.0f, nullptr };
+
+cvar_t item_respawn_time       = { "mp_item_respawn_time", "30", FCVAR_SERVER, 30.0f, nullptr };
+cvar_t weapon_respawn_time     = { "mp_weapon_respawn_time", "20", FCVAR_SERVER, 20.0f, nullptr };
+cvar_t ammo_respawn_time       = { "mp_ammo_respawn_time", "20", FCVAR_SERVER, 20.0f, nullptr };
+
+cvar_t vote_flags              = { "mp_vote_flags", "km", 0, 0.0f, nullptr };
+cvar_t votemap_min_time        = { "mp_votemap_min_time", "180", 0, 180.0f, nullptr };
 
 void GameDLL_Version_f()
 {
@@ -225,8 +238,13 @@ void GameDLL_SwapTeams_f()
 
 #endif // REGAMEDLL_ADD
 
+SpewRetval_t GameDLL_SpewHandler(SpewType_t spewType, int level, const char *pMsg);
+
 void EXT_FUNC GameDLLInit()
 {
+	// By default, direct dbg reporting...
+	SpewOutputFunc(GameDLL_SpewHandler);
+
 	g_pskill          = CVAR_GET_POINTER("skill");
 	g_psv_gravity     = CVAR_GET_POINTER("sv_gravity");
 	g_psv_aim         = CVAR_GET_POINTER("sv_aim");
@@ -236,6 +254,7 @@ void EXT_FUNC GameDLLInit()
 	g_psv_stopspeed   = CVAR_GET_POINTER("sv_stopspeed");
 	g_psv_stepsize    = CVAR_GET_POINTER("sv_stepsize");
 	g_psv_clienttrace = CVAR_GET_POINTER("sv_clienttrace");
+	g_psv_maxvelocity = CVAR_GET_POINTER("sv_maxvelocity");
 
 	CVAR_REGISTER(&displaysoundlist);
 	CVAR_REGISTER(&timelimit);
@@ -428,10 +447,32 @@ void EXT_FUNC GameDLLInit()
 	CVAR_REGISTER(&deathmsg_flags);
 	CVAR_REGISTER(&assist_damage_threshold);
 
+	CVAR_REGISTER(&freezetime_duck);
+	CVAR_REGISTER(&freezetime_jump);
+	CVAR_REGISTER(&defuser_allocation);
+	CVAR_REGISTER(&location_area_info);
+	CVAR_REGISTER(&chat_loc_fallback);
+
+	CVAR_REGISTER(&item_respawn_time);
+	CVAR_REGISTER(&weapon_respawn_time);
+	CVAR_REGISTER(&ammo_respawn_time);
+
+	CVAR_REGISTER(&vote_flags);
+	CVAR_REGISTER(&votemap_min_time);
+
+	CVAR_REGISTER(&cv_bot_enable);
+	CVAR_REGISTER(&cv_hostage_ai_enable);
+
 	// print version
 	CONSOLE_ECHO("ReGameDLL version: " APP_VERSION "\n");
 
+	// execute initial pre-configurations
+	SERVER_COMMAND("exec game_init.cfg\n");
+	SERVER_EXECUTE();
+
 #endif // REGAMEDLL_ADD
+
+	Regamedll_Game_Init();
 
 	Bot_RegisterCVars();
 	Tutor_RegisterCVars();
@@ -441,10 +482,29 @@ void EXT_FUNC GameDLLInit()
 	VoiceGameMgr_RegisterCVars();
 #endif
 
-#ifdef REGAMEDLL_ADD
-	// execute initial pre-configurations
-	SERVER_COMMAND("exec game_init.cfg\n");
-	SERVER_EXECUTE();
-#endif
+}
 
+SpewRetval_t GameDLL_SpewHandler(SpewType_t spewType, int level, const char *pMsg)
+{
+	bool bSpewPrint = (CVAR_GET_FLOAT("developer") >= level);
+	switch (spewType)
+	{
+	case SPEW_LOG:
+	case SPEW_MESSAGE:
+		if (bSpewPrint) UTIL_ServerPrint("%s", pMsg);
+		break;
+	case SPEW_WARNING:
+		if (bSpewPrint) UTIL_ServerPrint("Warning: %s", pMsg);
+		break;
+	case SPEW_ERROR:
+		Sys_Error("%s", pMsg);
+		return SPEW_ABORT; // fatal error, terminate it!
+	case SPEW_ASSERT:
+		UTIL_ServerPrint("Assert: %s", pMsg);
+		return SPEW_DEBUGGER; // assert always tries to debugger break
+	default:
+		break;
+	}
+
+	return SPEW_CONTINUE; // spew handled, continue on
 }

@@ -38,7 +38,7 @@
 #include <API/CSInterfaces.h>
 
 #define REGAMEDLL_API_VERSION_MAJOR 5
-#define REGAMEDLL_API_VERSION_MINOR 25
+#define REGAMEDLL_API_VERSION_MINOR 28
 
 // CBasePlayer::Spawn hook
 typedef IHookChainClass<void, class CBasePlayer> IReGameHook_CBasePlayer_Spawn;
@@ -588,10 +588,6 @@ typedef IHookChainRegistry<BOOL, int, int> IReGameHookRegistry_CSGameRules_TeamS
 typedef IHookChain<void, CBasePlayer *, CBasePlayerItem *> IReGameHook_CSGameRules_PlayerGotWeapon;
 typedef IHookChainRegistry<void, CBasePlayer *, CBasePlayerItem *> IReGameHookRegistry_CSGameRules_PlayerGotWeapon;
 
-// CHalfLifeMultiplay::SendDeathMessage hook
-typedef IHookChain<void, class CBaseEntity *, class CBasePlayer *, class CBasePlayer *, struct entvars_s *, const char *, int, int> IReGameHook_CSGameRules_SendDeathMessage;
-typedef IHookChainRegistry<void, class CBaseEntity *, class CBasePlayer *, class CBasePlayer *, struct entvars_s *, const char *, int, int> IReGameHookRegistry_CSGameRules_SendDeathMessage;
-
 // CBotManager::OnEvent hook
 typedef IHookChain<void, GameEventType, CBaseEntity *, CBaseEntity *> IReGameHook_CBotManager_OnEvent;
 typedef IHookChainRegistry<void, GameEventType, CBaseEntity*, CBaseEntity*> IReGameHookRegistry_CBotManager_OnEvent;
@@ -615,6 +611,22 @@ typedef IHookChainRegistryClass<void, CBasePlayerWeapon, float, float, float, fl
 // CBasePlayerWeapon::SendWeaponAnim hook
 typedef IHookChainClass<void, CBasePlayerWeapon, int, int> IReGameHook_CBasePlayerWeapon_SendWeaponAnim;
 typedef IHookChainRegistryClass<void, CBasePlayerWeapon, int, int> IReGameHookRegistry_CBasePlayerWeapon_SendWeaponAnim;
+
+// CHalfLifeMultiplay::SendDeathMessage hook
+typedef IHookChain<void, class CBaseEntity *, class CBasePlayer *, class CBasePlayer *, struct entvars_s *, const char *, int, int> IReGameHook_CSGameRules_SendDeathMessage;
+typedef IHookChainRegistry<void, class CBaseEntity *, class CBasePlayer *, class CBasePlayer *, struct entvars_s *, const char *, int, int> IReGameHookRegistry_CSGameRules_SendDeathMessage;
+
+// CBasePlayer::PlayerDeathThink hook
+typedef IHookChainClass<void, class CBasePlayer> IReGameHook_CBasePlayer_PlayerDeathThink;
+typedef IHookChainRegistryClass<void, class CBasePlayer> IReGameHookRegistry_CBasePlayer_PlayerDeathThink;
+
+// CBasePlayer::Observer_Think hook
+typedef IHookChainClass<void, class CBasePlayer> IReGameHook_CBasePlayer_Observer_Think;
+typedef IHookChainRegistryClass<void, class CBasePlayer> IReGameHookRegistry_CBasePlayer_Observer_Think;
+
+// CBasePlayer::RemoveAllItems hook
+typedef IHookChainClass<void, class CBasePlayer, BOOL> IReGameHook_CBasePlayer_RemoveAllItems;
+typedef IHookChainRegistryClass<void, class CBasePlayer, BOOL> IReGameHookRegistry_CBasePlayer_RemoveAllItems;
 
 class IReGameHookchains {
 public:
@@ -774,6 +786,10 @@ public:
 	virtual IReGameHookRegistry_CBasePlayerWeapon_KickBack *CBasePlayerWeapon_KickBack() = 0;
 	virtual IReGameHookRegistry_CBasePlayerWeapon_SendWeaponAnim *CBasePlayerWeapon_SendWeaponAnim() = 0;
 	virtual IReGameHookRegistry_CSGameRules_SendDeathMessage *CSGameRules_SendDeathMessage() = 0;
+
+	virtual IReGameHookRegistry_CBasePlayer_PlayerDeathThink *CBasePlayer_PlayerDeathThink() = 0;
+	virtual IReGameHookRegistry_CBasePlayer_Observer_Think *CBasePlayer_Observer_Think() = 0;
+	virtual IReGameHookRegistry_CBasePlayer_RemoveAllItems *CBasePlayer_RemoveAllItems() = 0;
 };
 
 struct ReGameFuncs_t {

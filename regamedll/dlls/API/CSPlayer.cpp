@@ -225,7 +225,7 @@ EXT_FUNC bool CCSPlayer::RemovePlayerItemEx(const char* pszItemName, bool bRemov
 
 			if (pItem == pPlayer->m_pActiveItem) {
 				((CBasePlayerWeapon *)pItem)->RetireWeapon();
-				
+
 				if (pItem->CanHolster() && pItem != pPlayer->m_pActiveItem && !(pPlayer->pev->weapons &(1 << pItem->m_iId))) {
 					return true;
 				}
@@ -249,11 +249,13 @@ EXT_FUNC CBaseEntity *CCSPlayer::GiveNamedItemEx(const char *pszName)
 
 	if (FStrEq(pszName, "weapon_c4")) {
 		pPlayer->m_bHasC4 = true;
-		pPlayer->SetBombIcon();
 
 		if (pPlayer->m_iTeam == TERRORIST) {
 			pPlayer->pev->body = 1;
 		}
+
+		pPlayer->SetBombIcon();
+
 	} else if (FStrEq(pszName, "weapon_shield")) {
 		pPlayer->DropPrimary();
 		pPlayer->DropPlayerItem("weapon_elite");
@@ -266,7 +268,7 @@ EXT_FUNC CBaseEntity *CCSPlayer::GiveNamedItemEx(const char *pszName)
 
 EXT_FUNC bool CCSPlayer::IsConnected() const
 {
-	return m_pContainingEntity->has_disconnected == false;
+	return BaseEntity()->has_disconnected == false;
 }
 
 EXT_FUNC void CCSPlayer::SetAnimation(PLAYER_ANIM playerAnim)
@@ -559,6 +561,8 @@ void CCSPlayer::ResetAllStats()
 		m_iNumKilledByUnanswered[i] = 0;
 		m_bPlayerDominated[i]       = false;
 	}
+
+	m_DamageList.Clear();
 }
 
 void CCSPlayer::OnSpawn()
@@ -587,6 +591,7 @@ void CCSPlayer::OnKilled()
 void CCSPlayer::OnConnect()
 {
 	ResetVars();
+	ResetAllStats();
 	m_iUserID = GETPLAYERUSERID(BasePlayer()->edict());
 }
 

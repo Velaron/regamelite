@@ -1,5 +1,12 @@
 #include "precompiled.h"
 
+#if !defined(DOOR_ASSERT)
+#undef DbgAssert
+#undef DbgAssertMsg
+#define DbgAssert(_exp) ((void)0)
+#define DbgAssertMsg(_exp, _msg) ((void)0)
+#endif
+
 TYPEDESCRIPTION CEnvGlobal::m_SaveData[] =
 {
 	DEFINE_FIELD(CEnvGlobal, m_globalstate, FIELD_STRING),
@@ -671,7 +678,7 @@ void CBaseButton::ButtonActivate()
 		PlayLockSounds(pev, &m_ls, FALSE, TRUE);
 	}
 
-	assert(m_toggle_state == TS_AT_BOTTOM);
+	DbgAssert(m_toggle_state == TS_AT_BOTTOM);
 	m_toggle_state = TS_GOING_UP;
 
 	SetMoveDone(&CBaseButton::TriggerAndWait);
@@ -688,7 +695,7 @@ void CBaseButton::ButtonActivate()
 // Button has reached the "in/up" position.  Activate its "targets", and pause before "popping out".
 void CBaseButton::TriggerAndWait()
 {
-	assert(m_toggle_state == TS_GOING_UP);
+	DbgAssert(m_toggle_state == TS_GOING_UP);
 
 	if (!UTIL_IsMasterTriggered(m_sMaster, m_hActivator))
 		return;
@@ -724,7 +731,7 @@ void CBaseButton::TriggerAndWait()
 // Starts the button moving "out/down".
 void CBaseButton::ButtonReturn()
 {
-	//assert(m_toggle_state == TS_AT_TOP);
+	DbgAssert(m_toggle_state == TS_AT_TOP);
 	m_toggle_state = TS_GOING_DOWN;
 
 	SetMoveDone(&CBaseButton::ButtonBackHome);
@@ -763,7 +770,7 @@ void CBaseButton::Restart()
 // Button has returned to start state. Quiesce it.
 void CBaseButton::ButtonBackHome()
 {
-	assert(m_toggle_state == TS_GOING_DOWN);
+	DbgAssert(m_toggle_state == TS_GOING_DOWN);
 	m_toggle_state = TS_AT_BOTTOM;
 
 	if (pev->spawnflags & SF_BUTTON_TOGGLE
@@ -884,7 +891,7 @@ void CRotButton::Spawn()
 	m_vecAngle1 = pev->angles;
 	m_vecAngle2 = pev->angles + pev->movedir * m_flMoveDistance;
 
-	assert(("rotating button start/end positions are equal", m_vecAngle1 != m_vecAngle2));
+	DbgAssertMsg(m_vecAngle1 != m_vecAngle2, "rotating button start/end positions are equal");
 
 	m_fStayPushed = (m_flWait == -1 ? TRUE : FALSE);
 	m_fRotating = TRUE;

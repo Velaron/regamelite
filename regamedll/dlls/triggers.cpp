@@ -585,7 +585,6 @@ void CTriggerCDAudio::Use(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYP
 	PlayTrack(pCaller->edict());
 }
 
-#ifdef REGAMEDLL_FIXES
 const char *g_szMP3trackFileMap[] =
 {
 	"", "",
@@ -617,7 +616,6 @@ const char *g_szMP3trackFileMap[] =
 	"media/Suspense05.mp3",
 	"media/Suspense07.mp3"
 };
-#endif
 
 void PlayCDTrack(edict_t *pClient, int iTrack)
 {
@@ -625,7 +623,7 @@ void PlayCDTrack(edict_t *pClient, int iTrack)
 	if (!pClient)
 		return;
 
-	if (iTrack < -1 || iTrack > 30)
+	if (iTrack < -1 || iTrack >= (int)ARRAYSIZE(g_szMP3trackFileMap))
 	{
 		ALERT(at_console, "TriggerCDAudio - Track %d out of range\n", iTrack);
 		return;
@@ -645,7 +643,7 @@ void PlayCDTrack(edict_t *pClient, int iTrack)
 		CLIENT_COMMAND(pClient, UTIL_VarArgs("mp3 play %s\n", g_szMP3trackFileMap[iTrack]));
 #else
 		char string[64];
-		Q_sprintf(string, "cd play %3d\n", iTrack);
+		Q_snprintf(string, sizeof(string), "cd play %3d\n", iTrack);
 		CLIENT_COMMAND(pClient, string);
 #endif
 	}
@@ -971,7 +969,7 @@ void CTriggerMultiple::Spawn()
 
 	InitTrigger();
 
-	assert(("trigger_multiple with health", pev->health == 0));
+	DbgAssertMsg(pev->health == 0, "trigger_multiple with health");
 
 	//UTIL_SetOrigin(pev, pev->origin);
 	//SET_MODEL(ENT(pev), STRING(pev->model));
@@ -995,6 +993,14 @@ void CTriggerMultiple::Spawn()
 		SetTouch(&CTriggerMultiple::MultiTouch);
 	}
 }
+
+#ifdef REGAMEDLL_FIXES
+void CTriggerMultiple::Restart()
+{
+	pev->nextthink = -1;
+	Spawn();
+}
+#endif
 
 LINK_ENTITY_TO_CLASS(trigger_once, CTriggerOnce, CCSTriggerOnce)
 
@@ -1206,7 +1212,7 @@ void CChangeLevel::KeyValue(KeyValueData *pkvd)
 			ALERT(at_error, "Map name '%s' too long (32 chars)\n", pkvd->szValue);
 		}
 
-		Q_strcpy(m_szMapName, pkvd->szValue);
+		Q_strlcpy(m_szMapName, pkvd->szValue);
 		pkvd->fHandled = TRUE;
 	}
 	else if (FStrEq(pkvd->szKeyName, "landmark"))
@@ -1216,7 +1222,7 @@ void CChangeLevel::KeyValue(KeyValueData *pkvd)
 			ALERT(at_error, "Landmark name '%s' too long (32 chars)\n", pkvd->szValue);
 		}
 
-		Q_strcpy(m_szLandmarkName, pkvd->szValue);
+		Q_strlcpy(m_szLandmarkName, pkvd->szValue);
 		pkvd->fHandled = TRUE;
 	}
 	else if (FStrEq(pkvd->szKeyName, "changetarget"))
@@ -1348,7 +1354,7 @@ void CChangeLevel::ChangeLevelNow(CBaseEntity *pActivator)
 	}
 
 	// This object will get removed in the call to CHANGE_LEVEL, copy the params into "safe" memory
-	Q_strcpy(st_szNextMap, m_szMapName);
+	Q_strlcpy(st_szNextMap, m_szMapName);
 
 	m_hActivator = pActivator;
 	SUB_UseTargets(pActivator, USE_TOGGLE, 0);
@@ -1361,7 +1367,7 @@ void CChangeLevel::ChangeLevelNow(CBaseEntity *pActivator)
 
 	if (!FNullEnt(pentLandmark))
 	{
-		Q_strcpy(st_szNextSpot, m_szLandmarkName);
+		Q_strlcpy(st_szNextSpot, m_szLandmarkName);
 		gpGlobals->vecLandmarkOffset = VARS(pentLandmark)->origin;
 	}
 
@@ -1407,8 +1413,8 @@ int CChangeLevel::AddTransitionToList(LEVELLIST *pLevelList, int listCount, cons
 		}
 	}
 
-	Q_strcpy(pLevelList[listCount].mapName, pMapName);
-	Q_strcpy(pLevelList[listCount].landmarkName, pLandmarkName);
+	Q_strlcpy(pLevelList[listCount].mapName, pMapName);
+	Q_strlcpy(pLevelList[listCount].landmarkName, pLandmarkName);
 
 	pLevelList[listCount].pentLandmark = pentLandmark;
 	pLevelList[listCount].vecLandmarkOrigin = VARS(pentLandmark)->origin;
@@ -1583,12 +1589,12 @@ NOXREF void NextLevel()
 	{
 		gpGlobals->mapname = ALLOC_STRING("start");
 		pChange = GetClassPtr<CCSChangeLevel>((CChangeLevel *)nullptr);
-		Q_strcpy(pChange->m_szMapName, "start");
+		Q_strlcpy(pChange->m_szMapName, "start");
 	}
 	else
 		pChange = GetClassPtr<CCSChangeLevel>((CChangeLevel *)VARS(pent));
 
-	Q_strcpy(st_szNextMap, pChange->m_szMapName);
+	Q_strlcpy(st_szNextMap, pChange->m_szMapName);
 	g_pGameRules->SetGameOver();
 
 	if (pChange->pev->nextthink < gpGlobals->time)
@@ -1763,8 +1769,30 @@ void CBaseTrigger::TeleportTouch(CBaseEntity *pOther)
 
 	if (pOther->IsPlayer())
 	{
+#ifdef REGAMEDLL_ADD
+		// If a landmark was specified, offset the player relative to the landmark
+		if (m_iszLandmarkName)
+		{
+			edict_t *pentLandmark = FIND_ENTITY_BY_TARGETNAME(nullptr, STRING(m_iszLandmarkName));
+
+			if (!FNullEnt(pentLandmark))
+			{
+				Vector diff = pevToucher->origin - VARS(pentLandmark)->origin;
+				tmp += diff;
+				tmp.z--; // offset by +1 because -1 will run out of this scope.
+			}
+			else
+			{
+				// fallback, shouldn't happen but anyway.
+				tmp.z -= pOther->pev->mins.z;
+			}
+		}
+		else
+#endif
 		// make origin adjustments in case the teleportee is a player. (origin in center, not at feet)
-		tmp.z -= pOther->pev->mins.z;
+		{
+			tmp.z -= pOther->pev->mins.z;
+		}
 	}
 
 	tmp.z++;
@@ -1815,6 +1843,26 @@ void CTriggerTeleport::Spawn()
 {
 	InitTrigger();
 	SetTouch(&CTriggerTeleport::TeleportTouch);
+}
+
+void CTriggerTeleport::KeyValue(KeyValueData *pkvd)
+{
+#ifdef REGAMEDLL_ADD
+	if (FStrEq(pkvd->szKeyName, "landmark"))
+	{
+		if (Q_strlen(pkvd->szValue) > 0)
+		{
+			m_iszLandmarkName = ALLOC_STRING(pkvd->szValue);
+		}
+
+		// If empty, handle it in the teleport touch instead
+		pkvd->fHandled = TRUE;
+	}
+	else
+#endif
+	{
+		CBaseTrigger::KeyValue(pkvd);
+	}
 }
 
 LINK_ENTITY_TO_CLASS(info_teleport_destination, CPointEntity, CCSPointEntity)
@@ -1979,7 +2027,7 @@ void CEscapeZone::EscapeTouch(CBaseEntity *pOther)
 			{
 				CBasePlayer *pPlayer = UTIL_PlayerByIndex(i);
 
-				if (!pPlayer || FNullEnt(pPlayer->pev))
+				if (!UTIL_IsValidPlayer(pPlayer))
 					continue;
 
 				if (pPlayer->m_iTeam == pEscapee->m_iTeam)

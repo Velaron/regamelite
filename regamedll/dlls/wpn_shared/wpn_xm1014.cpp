@@ -1,5 +1,7 @@
 #include "precompiled.h"
 
+const Vector XM1014_CONE_VECTOR = Vector(0.0725, 0.0725, 0.0); // special shotgun spreads
+
 LINK_ENTITY_TO_CLASS(weapon_xm1014, CXM1014, CCSXM1014)
 
 void CXM1014::Spawn()
@@ -166,10 +168,17 @@ void CXM1014::PrimaryAttack()
 
 	m_fInSpecialReload = 0;
 
+#ifdef REGAMEDLL_ADD
+	if (m_pPlayer->pev->flags & FL_ONGROUND)
+		KickBack(UTIL_SharedRandomLong(m_pPlayer->random_seed + 1, 3, 5), 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+	else
+		KickBack(UTIL_SharedRandomLong(m_pPlayer->random_seed + 1, 7, 10), 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+#else
 	if (m_pPlayer->pev->flags & FL_ONGROUND)
 		m_pPlayer->pev->punchangle.x -= UTIL_SharedRandomLong(m_pPlayer->random_seed + 1, 3, 5);
 	else
 		m_pPlayer->pev->punchangle.x -= UTIL_SharedRandomLong(m_pPlayer->random_seed + 1, 7, 10);
+#endif
 }
 
 void CXM1014::Reload()

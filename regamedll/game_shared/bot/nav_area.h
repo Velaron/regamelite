@@ -503,7 +503,10 @@ public:
 	CNavArea *GetNavAreaByID(unsigned int id) const;
 	CNavArea *GetNearestNavArea(const Vector *pos, bool anyZ = false) const;
 
+	bool IsValid() const;
 	Place GetPlace(const Vector *pos) const;						// return radio chatter place for given coordinate
+	Place NameToID(const char *name) const;
+	const char *IDToName(Place id) const;
 
 private:
 	const float m_cellSize;
@@ -683,7 +686,7 @@ bool NavAreaBuildPath(CNavArea *startArea, CNavArea *goalArea, const Vector *goa
 		int ladderTopDir;
 		while (true)
 		{
-			CNavArea *newArea;
+			CNavArea *newArea = nullptr;
 			NavTraverseType how;
 			const CNavLadder *ladder = nullptr;
 
@@ -716,6 +719,11 @@ bool NavAreaBuildPath(CNavArea *startArea, CNavArea *goalArea, const Vector *goa
 				newArea = (*floorIter).area;
 				how = (NavTraverseType)dir;
 				floorIter++;
+
+				DbgAssert(newArea);
+
+				if (!newArea)
+					continue;
 			}
 			// search ladders
 			else

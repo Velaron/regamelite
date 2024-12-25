@@ -130,6 +130,10 @@ inline edict_t *EntityHandle<T>::Set(edict_t *pEdict)
 	{
 		m_serialnumber = pEdict->serialnumber;
 	}
+	else
+	{
+		m_serialnumber = 0;
+	}
 
 	return pEdict;
 }
@@ -176,7 +180,7 @@ inline int EntityHandle<T>::GetSerialNumber() const
 template <typename T>
 inline bool EntityHandle<T>::operator==(T *pEntity) const
 {
-	assert(("EntityHandle<T>::operator==:  got a nullptr pointer!", pEntity != nullptr));
+	DbgAssertMsg(pEntity != nullptr, "EntityHandle<T>::operator==:  got a nullptr pointer!");
 
 	if (m_serialnumber != pEntity->edict()->serialnumber)
 	{
@@ -221,10 +225,10 @@ template <typename T>
 inline T *EntityHandle<T>::operator->()
 {
 	edict_t *pEdict = Get();
-	assert(("EntityHandle<T>::operator->:  pointer is nullptr!", pEdict != nullptr));
+	DbgAssertMsg(pEdict != nullptr, "EntityHandle<T>::operator->:  pointer is nullptr!");
 
 	T *pEntity = GET_PRIVATE<T>(pEdict);
-	assert(("EntityHandle<T>::operator->:  pvPrivateData is nullptr!", pEntity != nullptr));
+	DbgAssertMsg(pEntity != nullptr, "EntityHandle<T>::operator->:  pvPrivateData is nullptr!");
 	return pEntity;
 }
 

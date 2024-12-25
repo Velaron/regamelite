@@ -1118,10 +1118,7 @@ bool CCSBot::IsFriendInTheWay(const Vector *goalPos) const
 	{
 		CBasePlayer *pPlayer = UTIL_PlayerByIndex(i);
 
-		if (!pPlayer)
-			continue;
-
-		if (FNullEnt(pPlayer->pev))
+		if (!UTIL_IsValidPlayer(pPlayer))
 			continue;
 
 		if (!pPlayer->IsAlive())
@@ -1294,7 +1291,7 @@ CCSBot::PathResult CCSBot::UpdatePathMovement(bool allowSpeedChange)
 	if (IsOnLadder())
 		Jump(MUST_JUMP);
 
-	assert(m_pathIndex < m_pathLength);
+	Assert(m_pathIndex < m_pathLength);
 
 	// Check if reached the end of the path
 	bool nearEndOfPath = false;

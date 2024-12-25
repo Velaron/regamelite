@@ -1,5 +1,7 @@
 #include "precompiled.h"
 
+const Vector M3_CONE_VECTOR = Vector(0.0675, 0.0675, 0.0); // special shotgun spreads
+
 LINK_ENTITY_TO_CLASS(weapon_m3, CM3, CCSM3)
 
 void CM3::Spawn()
@@ -167,10 +169,17 @@ void CM3::PrimaryAttack()
 
 	m_fInSpecialReload = 0;
 
+#ifdef REGAMEDLL_ADD
+	if (m_pPlayer->pev->flags & FL_ONGROUND)
+		KickBack(UTIL_SharedRandomLong(m_pPlayer->random_seed + 1, 4, 6), 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+	else
+		KickBack(UTIL_SharedRandomLong(m_pPlayer->random_seed + 1, 8, 11), 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+#else
 	if (m_pPlayer->pev->flags & FL_ONGROUND)
 		m_pPlayer->pev->punchangle.x -= UTIL_SharedRandomLong(m_pPlayer->random_seed + 1, 4, 6);
 	else
 		m_pPlayer->pev->punchangle.x -= UTIL_SharedRandomLong(m_pPlayer->random_seed + 1, 8, 11);
+#endif
 
 	m_pPlayer->m_flEjectBrass = gpGlobals->time + 0.45f;
 }

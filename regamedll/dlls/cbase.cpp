@@ -63,6 +63,10 @@ NEW_DLL_FUNCTIONS gNewDLLFunctions =
 	nullptr
 };
 
+#ifndef REGAMEDLL_API
+entvars_t *g_pevLastInflictor = nullptr;
+#endif
+
 CMemoryPool hashItemMemPool(sizeof(hash_item_t), 64);
 
 int CaseInsensitiveHash(const char *string, int iBounds)
@@ -697,7 +701,11 @@ BOOL CBaseEntity::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, fl
 	pev->health -= flDamage;
 	if (pev->health <= 0)
 	{
+#ifdef REGAMEDLL_FIXES
+		KilledInflicted(pevInflictor, pevAttacker, GIB_NORMAL);
+#else
 		Killed(pevAttacker, GIB_NORMAL);
+#endif
 		return FALSE;
 	}
 
@@ -866,6 +874,17 @@ BOOL CBaseEntity::IsInWorld()
 	}
 
 	// speed
+#ifdef REGAMEDLL_FIXES
+	float maxvel = g_psv_maxvelocity->value;
+	if (pev->velocity.x > maxvel || pev->velocity.y > maxvel || pev->velocity.z > maxvel)
+	{
+		return FALSE;
+	}
+	if (pev->velocity.x < -maxvel || pev->velocity.y < -maxvel || pev->velocity.z < -maxvel)
+	{
+		return FALSE;
+	}
+#else
 	if (pev->velocity.x >= 2000.0 || pev->velocity.y >= 2000.0 || pev->velocity.z >= 2000.0)
 	{
 		return FALSE;
@@ -874,6 +893,7 @@ BOOL CBaseEntity::IsInWorld()
 	{
 		return FALSE;
 	}
+#endif
 
 	return TRUE;
 }
@@ -1429,7 +1449,11 @@ VectorRef CBaseEntity::__API_HOOK(FireBullets3)(VectorRef vecSrc, VectorRef vecD
 				pEntity->pev->punchangle.x = iCurrentDamage * RANDOM_FLOAT(-0.15, 0.15);
 				pEntity->pev->punchangle.z = iCurrentDamage * RANDOM_FLOAT(-0.15, 0.15);
 
+#ifndef REGAMEDLL_FIXES
 				if (pEntity->pev->punchangle.x < 4)
+#else
+				if (pEntity->pev->punchangle.x < -4)
+#endif
 				{
 					pEntity->pev->punchangle.x = -4;
 				}
@@ -1573,6 +1597,30 @@ void OnFreeEntPrivateData(edict_t *pEnt)
 	CBaseEntity *pEntity = GET_PRIVATE<CBaseEntity>(pEnt);
 	if (!pEntity)
 		return;
+
+#ifdef REGAMEDLL_FIXES
+	// FIXED: Ensure this item will be removed from the owner player's inventory 'm_rgpPlayerItems[]'
+	// to avoid dangling pointers
+	CBasePlayerItem *pItem = dynamic_cast<CBasePlayerItem *>(pEntity);
+	if (pItem)
+	{
+		CBasePlayer *pOwner = GET_PRIVATE<CBasePlayer>(pItem->pev->owner);
+		if (pOwner && pOwner->IsPlayer())
+		{
+			if (pOwner->m_pActiveItem == pItem && pItem->IsWeapon())
+				((CBasePlayerWeapon *)pItem)->RetireWeapon();
+
+			if (pOwner->RemovePlayerItem(pItem))
+			{
+				// Ammo must be dropped, otherwise grenades cannot be buy or picked up
+				if (IsGrenadeWeapon(pItem->m_iId) || pItem->m_iId == WEAPON_C4)
+					pOwner->m_rgAmmo[pItem->PrimaryAmmoIndex()] = 0;
+
+				pOwner->pev->weapons &= ~(1 << pItem->m_iId);
+			}
+		}
+	}
+#endif
 
 #ifdef REGAMEDLL_API
 	pEntity->OnDestroy();

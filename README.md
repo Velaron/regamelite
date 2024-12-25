@@ -1,4 +1,4 @@
-# ReGameDLL_CS [![Download](https://camo.githubusercontent.com/0c15c5ed5da356288ad4bb69ed24267fb48498f2/68747470733a2f2f696d672e736869656c64732e696f2f6769746875622f72656c656173652f73316c656e74712f526547616d65444c4c5f43532e737667)](https://github.com/s1lentq/ReGameDLL_CS/releases/latest) [![Downloads](https://camo.githubusercontent.com/7eb895bf12d373df1d7c2bd2af3eb7d6328cdf6c02eee380fa93f81365c32d41/68747470733a2f2f696d672e736869656c64732e696f2f6769746875622f646f776e6c6f6164732f73316c656e74712f526547616d65444c4c5f43532f746f74616c3f636f6c6f723d696d706f7274616e74)]() [![Percentage of issues still open](http://isitmaintained.com/badge/open/s1lentq/ReGameDLL_CS.svg)](http://isitmaintained.com/project/s1lentq/ReGameDLL_CS "Percentage of issues still open") [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) <img align="right" src="https://cloud.githubusercontent.com/assets/5860435/20008568/b3623150-a2d3-11e6-85f3-0d6571045fc9.png" alt="Counter-Strike 1.6 GameDLL" />
+# ReGameDLL_CS [![GitHub release (by tag)](https://img.shields.io/github/downloads/s1lentq/ReGameDLL_CS/latest/total)](https://github.com/s1lentq/ReGameDLL_CS/releases/latest) ![GitHub all releases](https://img.shields.io/github/downloads/s1lentq/ReGameDLL_CS/total) [![Percentage of issues still open](http://isitmaintained.com/badge/open/s1lentq/ReGameDLL_CS.svg)](http://isitmaintained.com/project/s1lentq/ReGameDLL_CS "Percentage of issues still open") [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) <img align="right" src="https://cloud.githubusercontent.com/assets/5860435/20008568/b3623150-a2d3-11e6-85f3-0d6571045fc9.png" alt="Counter-Strike 1.6 GameDLL" />
 Reverse-engineered gamedll (mp.dll / Counter-Strike)
 
 ## What is this?
@@ -29,6 +29,7 @@ This means that plugins that do binary code analysis (Orpheu for example) probab
 | swapteams                           | Swap the teams and restart the game (1 sec delay to restart by default).<br/> Args: <br/>`0` - swap teams without restart. <br/> `>0.001` - time delay in seconds to restart the round after swap. |
 | give                                | Give weapon command.<br/> Args:<br/><weapon_name><br/>Usage:<br/>`give weapon_ak47`<br/>`give weapon_usp`<br/><br/>NOTE: `sv_cheats 1` required. |
 | impulse 255                         | Give all weapons.<br/><br/>NOTE: `sv_cheats 1` required. |
+| impulse 200                         | Noclip with air acceleration.<br/><br/>NOTE: `sv_cheats 1` required. |
 
 ## Configuration (cvars)
 <details>
@@ -111,17 +112,27 @@ This means that plugins that do binary code analysis (Orpheu for example) probab
 | mp_hostages_rescued_ratio          | 1.0     | 0.0 | 1.0          | Ratio of hostages rescued to win the round. |
 | mp_legacy_vehicle_block            | 1       | 0   | 1            | Legacy func_vehicle behavior when blocked by another entity.<br/>`0` New behavior <br/>`1` Legacy behavior |
 | mp_dying_time                      | 3.0     | 0.0 | -            | Time for switch to free observing after death.<br/>`0` - disable spectating around death.<br/>`>0.00001` - time delay to start spectate.<br/>`NOTE`: The countdown starts when the player’s death animation is finished. |
-| mp_deathmsg_flags                  | 7       | 0   | 7            | Sets a bitsum for extra information in the player's death message.<br/>`0` disabled<br/>`1` position where the victim died<br/>`2` index of the assistant who helped the attacker kill the victim<br/>`4` rarity classification bits, e.g., `blinkill`, `noscope`, `penetrated`, etc. |
+| mp_deathmsg_flags                  | abc     | 0   | -            | Sets a flags for extra information in the player's death message.<br/>`0` disabled<br/>`a` position where the victim died<br/>`b` index of the assistant who helped the attacker kill the victim<br/>`c` rarity classification bits, e.g., `blinkill`, `noscope`, `penetrated`, etc. |
 | mp_assist_damage_threshold         | 40      | 0   | 100          | Sets the percentage of damage needed to score an assist. |
+| mp_freezetime_duck                 | 1       | 0   | 1            | Allow players to duck during freezetime.<br/> `0` disabled<br/>`1` enabled |
+| mp_freezetime_jump                 | 1       | 0   | 1            | Allow players to jump during freezetime.<br/> `0` disabled<br/>`1` enabled |
+| mp_defuser_allocation              | 0       | 0   | 2            | Give defuser on player spawn.<br/> `0` disabled<br/>`1` Random players. <br/>`2` All players. |
+| mp_location_area_info              | 0       | 0   | 3            | Enable location area info.<br/> `0` disabled<br/>`1` show location below HUD radar.<br/>`2` show location in HUD chat. `NOT RECOMMENDED!` [:speech_balloon:](## "Not all client builds are compatible")<br/>`3` both displayed. `NOT RECOMMENDED!` [:speech_balloon:](## "Not all client builds are compatible")<br/><br/>`NOTE`: Navigation `maps/.nav` file required and should contain place names<br/>`NOTE`: If option `2` or `3` is enabled, be sure to enable `mp_chat_loc_fallback 1` |
+| mp_item_respawn_time               | 30      | 0.0 | -            | The respawn time for items (such as health packs, armor, etc.). |
+| mp_weapon_respawn_time             | 20      | 0.0 | -            | The respawn time for weapons. |
+| mp_ammo_respawn_time               | 20      | 0.0 | -            | The respawn time for ammunition. |
+| mp_vote_flags                      | km      | 0   | -            | Vote systems enabled in server.<br/>`0` voting disabled<br/>`k` votekick enabled via `vote` command<br/>`m` votemap enabled via `votemap` command |
+| mp_votemap_min_time                | 180     | 0.0 | -            | Minimum seconds that must elapse on map before `votemap` command can be used. |
+
 </details>
 
 ## How to install zBot for CS 1.6?
 * Extract all the files from an [archive](regamedll/extra/zBot/bot_profiles.zip?raw=true)
-* Enter `-bots` option at the command line HLDS
+* Enable CVar `bot_enable 1` in `cstrike/game_init.cfg` (if this config file does not exist, create it)
 
-## How to install CSCZ hostage AI for CS 1.6?
+## How to install CS:CZ hostage AI for CS 1.6?
 * Extract all the files from an [archive](regamedll/extra/HostageImprov/host_improv.zip?raw=true)
-* Enter `-host-improv` option at the command line HLDS
+* Enable CVar `hostage_ai_enable 1` in `cstrike/game_init.cfg` (if this config file does not exist, create it)
 
 ## Build instructions
 ### Checking requirements

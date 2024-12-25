@@ -15,7 +15,6 @@
 
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <assert.h>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -42,7 +41,7 @@ PlaceDirectory::EntryType PlaceDirectory::GetEntry(Place place) const
 	auto it = std::find(m_directory.begin(), m_directory.end(), place);
 	if (it == m_directory.end())
 	{
-		assert(false && "PlaceDirectory::GetEntry failure");
+		DbgAssert(false && "PlaceDirectory::GetEntry failure");
 		return 0;
 	}
 
@@ -54,7 +53,7 @@ void PlaceDirectory::AddPlace(Place place)
 	if (place == UNDEFINED_PLACE)
 		return;
 
-	assert(place < 1000);
+	DbgAssert(place < 1000);
 
 	if (IsKnown(place))
 		return;
@@ -68,9 +67,9 @@ Place PlaceDirectory::EntryToPlace(EntryType entry) const
 		return UNDEFINED_PLACE;
 
 	unsigned int i = entry - 1;
-	if (i > m_directory.size())
+	if (i >= m_directory.size())
 	{
-		assert(false && "PlaceDirectory::EntryToPlace: Invalid entry");
+		DbgAssert(false && "PlaceDirectory::EntryToPlace: Invalid entry");
 		return UNDEFINED_PLACE;
 	}
 
@@ -86,7 +85,10 @@ void PlaceDirectory::Save(int fd)
 	// store entries
 	for (auto &id : m_directory)
 	{
-		auto placeName = TheBotPhrases->IDToName(id);
+		const char *placeName = TheBotPhrases->IDToName(id);
+
+		if (!TheBotPhrases->IsValid() && !placeName)
+			placeName = TheNavAreaGrid.IDToName(id);
 
 		// store string length followed by string itself
 		unsigned short len = (unsigned short)Q_strlen(placeName) + 1;
@@ -111,7 +113,11 @@ void PlaceDirectory::Load(SteamFile *file)
 		file->Read(&len, sizeof(unsigned short));
 		file->Read(placeName, len);
 
-		AddPlace(TheBotPhrases->NameToID(placeName));
+		Place place = TheBotPhrases->NameToID(placeName);
+		if (!TheBotPhrases->IsValid() && place == UNDEFINED_PLACE)
+			place = TheNavAreaGrid.NameToID(placeName);
+
+		AddPlace(place);
 	}
 }
 
@@ -626,12 +632,15 @@ bool SaveNavigationMap(const char *filename)
 void LoadLocationFile(const char *filename)
 {
 	char locFilename[256];
-	Q_strcpy(locFilename, filename);
+	Q_strlcpy(locFilename, filename);
 
-	char *dot = Q_strchr(locFilename, '.');
+	char *dot = Q_strrchr(locFilename, '.');
 	if (dot)
 	{
-		Q_strcpy(dot, ".loc");
+		int dotlen = dot - locFilename;
+		size_t remaining_size = sizeof(locFilename) - dotlen;
+		if (remaining_size > 0)
+			Q_snprintf(dot, remaining_size, ".loc");
 
 		int locDataLength;
 		char *locDataFile = (char *)LOAD_FILE_FOR_ME(const_cast<char *>(locFilename), &locDataLength);
@@ -653,7 +662,12 @@ void LoadLocationFile(const char *filename)
 				for (int i = 0; i < dirSize; i++)
 				{
 					locData = SharedParse(locData);
-					directory.push_back(TheBotPhrases->NameToID(SharedGetToken()));
+
+					Place place = TheBotPhrases->NameToID(SharedGetToken());
+					if (!TheBotPhrases->IsValid() && place == UNDEFINED_PLACE)
+						place = TheNavAreaGrid.NameToID(SharedGetToken());
+
+					directory.push_back(place);
 				}
 
 				// read places for each nav area
@@ -760,7 +774,7 @@ NavErrorType LoadNavigationMap()
 
 	// nav filename is derived from map filename
 	char filename[256];
-	Q_sprintf(filename, "maps\\%s.nav", STRING(gpGlobals->mapname));
+	Q_snprintf(filename, sizeof(filename), "maps\\%s.nav", STRING(gpGlobals->mapname));
 
 	// free previous navigation map data
 	DestroyNavigationMap();

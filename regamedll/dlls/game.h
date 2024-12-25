@@ -43,12 +43,13 @@
 extern cvar_t *g_pskill;
 extern cvar_t *g_psv_gravity;
 extern cvar_t *g_psv_aim;
+extern cvar_t *g_footsteps;
 extern cvar_t *g_psv_accelerate;
 extern cvar_t *g_psv_friction;
 extern cvar_t *g_psv_stopspeed;
 extern cvar_t *g_psv_stepsize;
 extern cvar_t *g_psv_clienttrace;
-extern cvar_t *g_footsteps;
+extern cvar_t *g_psv_maxvelocity;
 
 extern cvar_t displaysoundlist;
 extern cvar_t timelimit;
@@ -197,6 +198,16 @@ extern cvar_t legacy_vehicle_block;
 extern cvar_t dying_time;
 extern cvar_t deathmsg_flags;
 extern cvar_t assist_damage_threshold;
+extern cvar_t freezetime_duck;
+extern cvar_t freezetime_jump;
+extern cvar_t defuser_allocation;
+extern cvar_t location_area_info;
+extern cvar_t chat_loc_fallback;
+extern cvar_t item_respawn_time;
+extern cvar_t weapon_respawn_time;
+extern cvar_t ammo_respawn_time;
+extern cvar_t vote_flags;
+extern cvar_t votemap_min_time;
 
 #endif
 

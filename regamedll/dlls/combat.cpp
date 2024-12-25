@@ -9,7 +9,11 @@ void PlayerBlind(CBasePlayer *pPlayer, entvars_t *pevInflictor, entvars_t *pevAt
 		for (int i = 1; i <= gpGlobals->maxClients; i++)
 		{
 			CBasePlayer *pObserver = UTIL_PlayerByIndex(i);
-			if (pObserver && pObserver->IsObservingPlayer(pPlayer))
+
+			if (!UTIL_IsValidPlayer(pObserver))
+				continue;
+
+			if (pObserver->IsObservingPlayer(pPlayer))
 			{
 				UTIL_ScreenFade(pObserver, color, fadeTime, fadeHold, alpha, 0);
 			}
@@ -280,8 +284,6 @@ void RadiusDamage(Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacker
 				useLOS = true;
 				damageRatio = GetAmountOfPlayerVisible(vecSrc, pEntity);
 			}
-
-			damageRatio = GetAmountOfPlayerVisible(vecSrc, pEntity);
 
 			float length;
 #ifdef REGAMEDLL_ADD
