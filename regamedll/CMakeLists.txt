@@ -54,6 +54,7 @@ set(SHARED_SRCS
 	"public/FileSystem.cpp"
 	"public/interface.cpp"
 	"public/MemPool.cpp"
+	"public/tier0/dbg.cpp"
 )
 
 set(GAMEDLL_SRCS
@@ -192,7 +193,7 @@ set(GAMEDLL_SRCS
 )
 
 if(MSVC)
-	set(GAMEDLL_SRCS ${GAMEDLL_SRCS} "msvc/mp.def" "public/tier0/dbg.cpp")
+	set(GAMEDLL_SRCS ${GAMEDLL_SRCS} "msvc/mp.def" "public/tier0/assert_dialog.cpp" "public/tier0/platform_win32.cpp" "public/tier0/assert_dialog.rc")
 endif()
 
 add_library(${REGAME_LIB} MODULE ${appversion.sh})
@@ -229,6 +230,7 @@ if(NOT MSVC)
 		_strnicmp=strncasecmp
 		_strdup=strdup
 		_unlink=unlink
+		_snprintf=snprintf
 		_vsnprintf=vsnprintf
 		_write=write
 		_close=close
@@ -243,6 +245,8 @@ if(NOT MSVC)
         -Wno-write-strings
         -fno-exceptions
     )
+
+	set(GAMEDLL_SRCS ${GAMEDLL_SRCS} "public/tier0/platform_posix.cpp")
 endif()
 
 target_sources(${REGAME_LIB} PRIVATE
