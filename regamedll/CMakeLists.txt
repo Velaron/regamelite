@@ -197,7 +197,9 @@ endif()
 
 add_library(${REGAME_LIB} MODULE ${appversion.sh})
 
-add_custom_target(appversion DEPENDS COMMAND "${PROJECT_SOURCE_DIR}/version/appversion.sh" "${PROJECT_SOURCE_DIR}/..")
+if (NOT TARGET appversion)
+	add_custom_target(appversion DEPENDS COMMAND "${PROJECT_SOURCE_DIR}/version/appversion.sh" "${PROJECT_SOURCE_DIR}/..")
+endif()
 
 add_dependencies(${REGAME_LIB} appversion)
 
