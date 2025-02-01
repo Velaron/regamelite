@@ -70,11 +70,13 @@
 	#include <ctype.h>
 	//#include <dirent.h>
 	#include <dlfcn.h>
+#if !defined(__APPLE__)
 	#include <elf.h>
+	#include <link.h>
+#endif
 	#include <errno.h>
 	#include <fcntl.h>
 	#include <limits.h>
-	#include <link.h>
 	#include <netdb.h>
 	#include <netinet/in.h>
 	#include <pthread.h>
@@ -84,7 +86,9 @@
 	#include <sys/stat.h>
 	#include <sys/time.h>
 	#include <sys/types.h>
+#if !defined(__APPLE__)
 	#include <sys/sysinfo.h>
+#endif
 	#include <unistd.h>
 #endif // _WIN32
 
@@ -168,7 +172,7 @@
 	#define NOINLINE __attribute__((noinline))
 	#define ALIGN16 __attribute__((aligned(16)))
 	#define NORETURN __attribute__((noreturn))
-	
+
 	#if defined(__i386__) || defined(_X86_)
 		#define FORCE_STACK_ALIGN __attribute__((force_align_arg_pointer))
 	#else

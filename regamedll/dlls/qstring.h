@@ -70,7 +70,7 @@ private:
 
 extern globalvars_t *gpGlobals;
 
-#if !defined(__x86_64__) && !defined(_WIN64) && !defined(__aarch64__) && !defined(__powerpc64__) && !defined(__ppc64__)
+#if !defined(__x86_64__) && !defined(_WIN64) && !defined(__aarch64__) && !defined(__powerpc64__) && !defined(__ppc64__) && !defined(__APPLE__)
 #define STRING(offset)   ((const char *)(gpGlobals->pStringBase + (unsigned int)(offset)))
 #define MAKE_STRING(str) ((unsigned int)(str) - (unsigned int)(STRING(0)))
 #else

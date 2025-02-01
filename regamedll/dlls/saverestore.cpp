@@ -277,7 +277,7 @@ void CSaveRestoreBuffer::BufferRewind(int size)
 	m_pData->size -= size;
 }
 
-#if !defined(_WIN32) && !defined(__ANDROID__)
+#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(__APPLE__)
 extern "C"
 {
 	inline unsigned _rotr(unsigned val, int shift)
