@@ -29,6 +29,10 @@
 #include "precompiled.h"
 #include <algorithm>
 
+#ifdef __APPLE__
+#include <random>
+#endif
+
 BotPhraseManager *TheBotPhrases = nullptr;
 CountdownTimer BotChatterInterface::m_encourageTimer;
 IntervalTimer BotChatterInterface::m_radioSilenceInterval[2];
@@ -364,7 +368,14 @@ void BotPhrase::Randomize()
 {
 	for (size_t i = 0; i < m_voiceBank.size(); i++)
 	{
+#ifdef __APPLE__
+		std::random_device rd {};
+		std::mt19937 mt {rd()};
+
+		std::shuffle(m_voiceBank[i]->begin(), m_voiceBank[i]->end(), mt);
+#else
 		std::random_shuffle(m_voiceBank[i]->begin(), m_voiceBank[i]->end());
+#endif
 	}
 }
 
@@ -421,10 +432,6 @@ bool BotPhraseManager::Initialize(const char *filename, int bankIndex)
 	const int RadioPathLen = 128;
 	char baseDir[RadioPathLen] = "";
 	char compositeFilename[RadioPathLen];
-
-#ifdef REGAMEDLL_ADD
-	char filePath[MAX_PATH];
-#endif
 
 	// Parse the BotChatter.db into BotPhrase collections
 	while (true)
@@ -605,13 +612,6 @@ bool BotPhraseManager::Initialize(const char *filename, int bankIndex)
 				if (!Q_stricmp(token, "End"))
 					break;
 
-#ifdef REGAMEDLL_ADD
-				Q_snprintf(filePath, sizeof(filePath), "sound\\%s%s", baseDir, token);
-
-				if (!g_pFileSystem->FileExists(filePath))
-					continue;
-#endif
-
 				// found a phrase - add it to the collection
 				BotSpeakable *speak = new BotSpeakable;
 				if (baseDir[0])
@@ -628,6 +628,14 @@ bool BotPhraseManager::Initialize(const char *filename, int bankIndex)
 				speak->m_count = countCriteria;
 
 				Q_snprintf(compositeFilename, RadioPathLen, "sound\\%s", speak->m_phrase);
+
+#ifndef _WIN32
+				for(auto i = 0; i < Q_strlen(compositeFilename); ++i)
+				{
+					if(compositeFilename[i] == '\\')
+						compositeFilename[i] = '/';
+				}
+#endif
 				speak->m_duration = (double)GET_APPROX_WAVE_PLAY_LEN(compositeFilename) / 1000.0f;
 
 				if (speak->m_duration <= 0.0f)

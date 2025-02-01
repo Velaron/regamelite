@@ -243,6 +243,12 @@ if(NOT MSVC)
         -fms-extensions
         -fpermissive
         -Wno-write-strings
+        -Wno-switch
+        -Wno=invalid-offsetof
+        -Wno-macro-redefined
+        -Wno-invalid-offsetof
+        -Wno-unknown-warning-option
+        -Wno-void-pointer-to-int-cast
         -fno-exceptions
     )
 
